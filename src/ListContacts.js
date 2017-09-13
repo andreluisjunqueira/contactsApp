@@ -1,28 +1,85 @@
 import React, { Component } from 'react';
+import { Link } from 'react-router-dom';
+import PropTypes from 'prop-types';
+import escapeRegExp from 'escape-string-regexp';
+import sortBy from 'sort-by';
 
-export default class ListContatcs extends Component{
+class ListContacts extends Component {
+
+    state = {
+        query : ''
+    }
+
+    updateQuery = (query)=>{
+        this.setState({query : query.trim()});
+    }
+
+    clearQuery(){
+        this.setState({query:''});
+    }
     render(){
+        const { query } = this.state;
+        const { contacts, onDelete } = this.props;
+        let showingContacts;
+        if(query){
+            const match = new RegExp(escapeRegExp(query),'i');
+            showingContacts = contacts.filter(c=>match.test(c.name))
+        }else{
+            showingContacts = contacts;
+        }
+        showingContacts.sort(sortBy('name'))
         return(
-            <ol className='contact-list'>
-                {this.props.contacts.map((contact)=>{
-                return (<li key={contact.id} className='contact-list-item'> 
-                    <div
-                        className='contact-avatar'
-                        style={{
-                            backgroundImage:`url(${contact.avatarURL})`
-                        }}
+            <div className='list-contacts'>
+                <div className='list-contacts-top'>
+                    <input 
+                        className='search-contacts'
+                        type='text'
+                        placeholder='Search contacts'
+                        value={this.state.query}
+                        onChange={ (event)=>this.updateQuery(event.target.value) }
                     />
-                    <div className='contact-details'>
-                        <p>{contact.name}</p>
-                        <p>{contact.email}</p>
+                    <Link
+                        className='add-contact'
+                        to='/create'
+                    >
+                        Add contact
+                    </Link>
+                </div>
+                {showingContacts.length !== contacts.length &&(
+                    <div className='showing-contacts'>
+                        <span>Now showing { showingContacts.length } of { contacts.length } total</span>
+                        <button onClick={()=>this.clearQuery()}>Show all</button>
                     </div>
-                    
-                    <button className='contact-remove'>
-                        Remove
-                    </button>
-                </li>)
-                })}
-            </ol>
+                )}
+                <ol className='contact-list'>
+                    {showingContacts.map((contact)=>{
+                    return (<li key={contact.id} className='contact-list-item'> 
+                        <div
+                            className='contact-avatar'
+                            style={{
+                                backgroundImage:`url(${contact.avatarURL})`
+                            }}
+                        />
+                        <div className='contact-details'>
+                            <p>{contact.name}</p>
+                            <p>{contact.email}</p>
+                        </div>
+                        
+                        <button className='contact-remove' onClick={()=>onDelete(contact)}>
+                            Remove
+                        </button>
+                    </li>)
+                    })}
+                </ol>
+            </div> 
         )
     }
 }
+
+ListContacts.propTypes = {
+    onDelete : PropTypes.func.isRequired,
+    contacts : PropTypes.array.isRequired
+}
+
+export default ListContacts;
+
